@@ -37,6 +37,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+// Define AC line frequency (50Hz or 60Hz)
+#define AC_LINE_FREQUENCY 60  // Change to 60 for 60Hz systems
+
+// Calculate half-cycle period in microseconds based on frequency
+#define HALF_CYCLE_PERIOD_US (1000000 / (AC_LINE_FREQUENCY * 2))
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -86,23 +91,27 @@ void ProcessReceivedValue(void)
   // Update dimmer value
   dimmerValue = (uint16_t)tempValue;
   
+  // Convert value 1 to 2 for more stable operation
+  if (dimmerValue == 1) {
+    dimmerValue = 2;
+  }
+  
   // Calculate dimming delay in microseconds
-  // For 50Hz AC, each half-cycle is 10ms (10,000 microseconds)
-  // Map dimmer value 0-100 to delay 10000-0 (inverted, 0% = full off, 100% = full on)
+  // Map dimmer value 0-100 to delay HALF_CYCLE_PERIOD_US-0 (inverted, 0% = full off, 100% = full on)
   if (dimmerValue == 0) {
     // If dimmer is 0%, keep SSR off
-    dimmerDelayUs = 10000; // Set to max delay (never trigger)
+    dimmerDelayUs = HALF_CYCLE_PERIOD_US; // Set to max delay (never trigger)
   } else if (dimmerValue == 100) {
     // If dimmer is 100%, keep SSR fully on
     dimmerDelayUs = 0;     // No delay (trigger immediately)
   } else {
-    // Calculate delay (0% = 10000us delay, 100% = 0us delay)
-    // Ensure the delay is within valid range for the timer (1-9999)
-    dimmerDelayUs = 10000 - ((dimmerValue * 10000) / 100);
+    // Calculate delay (0% = HALF_CYCLE_PERIOD_US delay, 100% = 0us delay)
+    // Ensure the delay is within valid range for the timer
+    dimmerDelayUs = HALF_CYCLE_PERIOD_US - ((dimmerValue * HALF_CYCLE_PERIOD_US) / 100);
     
     // Make sure we have a valid delay value (not 0 or too large)
-    if (dimmerDelayUs >= 10000) {
-      dimmerDelayUs = 9900;
+    if (dimmerDelayUs >= HALF_CYCLE_PERIOD_US) {
+      dimmerDelayUs = HALF_CYCLE_PERIOD_US - 100; // Leave a small margin
     } else if (dimmerDelayUs == 0) {
       dimmerDelayUs = 1;
     }
