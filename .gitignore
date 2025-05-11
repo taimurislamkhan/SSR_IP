@@ -1,0 +1,26 @@
+# STM32 build artifacts
+Debug/
+Release/
+build/
+*.o
+*.d
+*.lst
+*.map
+*.elf
+*.hex
+*.bin
+
+# IDE specific files
+.settings/
+.vscode/
+.idea/
+*.launch
+
+# Backup files
+*.bak
+*~
+*.swp
+
+# Other
+.DS_Store
+Thumbs.db
